@@ -260,13 +260,13 @@ export async function runCampaignQueue(campaignId: string): Promise<void> {
       action: "CAMPAIGN_COMPLETED",
       entityType: "Campaign",
       entityId: campaignId,
-      details: {
+      details: JSON.stringify({
         campaignName: campaign.name,
         total: campaign.totalCount,
         sent: sentCount,
         failed: failedCount,
         skipped: skippedCount,
-      },
+      }),
     },
   });
 }
