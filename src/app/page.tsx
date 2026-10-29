@@ -107,11 +107,18 @@ export default function DashboardPage() {
             Refresh
           </button>
           <Link
+            href="/drafts"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition"
+          >
+            <Sparkles className="h-4 w-4" />
+            ⚡ 1-Click Outreach
+          </Link>
+          <Link
             href="/campaigns"
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition"
           >
             <Send className="h-4 w-4" />
-            Send Approved Batch
+            Campaigns
           </Link>
         </div>
       </div>

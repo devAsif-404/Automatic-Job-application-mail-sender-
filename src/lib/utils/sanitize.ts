@@ -42,8 +42,8 @@ export function normalizeEmail(email: string): string {
 export function redactSensitive(text: string): string {
   if (!text) return "";
   return text
-    .replace(/(password|pass|secret|key|token|auth)\s*[:=]\s*["']?(AIza[0-9A-Za-z-_]{30,50})["']?/gi, "$1: [REDACTED_GEMINI_KEY]")
-    .replace(/AIza[0-9A-Za-z-_]{30,50}/g, "[REDACTED_GEMINI_KEY]")
+    .replace(/(password|pass|secret|key|token|auth)\s*[:=]\s*["']?((?:AIza|AQ\.)[0-9A-Za-z-_]{30,60})["']?/gi, "$1: [REDACTED_GEMINI_KEY]")
+    .replace(/(?:AIza|AQ\.)[0-9A-Za-z-_]{30,60}/g, "[REDACTED_GEMINI_KEY]")
     .replace(/(password|pass|secret|key|token|auth)\s*[:=]\s*["']?(?!\[REDACTED)([^"',\s]+)["']?/gi, "$1: [REDACTED]")
     .replace(/bearer\s+[A-Za-z0-9-_.]+/gi, "Bearer [REDACTED]");
 }

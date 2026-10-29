@@ -55,6 +55,7 @@ export default function DraftsPage() {
   const [drafts, setDrafts] = useState<ApplicationDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [quickSending, setQuickSending] = useState(false);
   const [targetRole, setTargetRole] = useState("Full Stack Software Engineer");
   const [jobDescription, setJobDescription] = useState("");
   const [tone, setTone] = useState("Professional, confident, and direct");
@@ -108,6 +109,35 @@ export default function DraftsPage() {
       toast.error(err.message);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleQuickSendAll = async () => {
+    if (
+      !confirm(
+        "⚡ Start 1-Click Outreach?\n\nGemini will generate personalized emails and cover letters for all valid contacts, automatically approve them, attach your verified resume, and start sending through your Gmail SMTP account.\n\nProceed?"
+      )
+    )
+      return;
+
+    try {
+      setQuickSending(true);
+      toast.info("1-Click Outreach initiated: generating tailored emails & cover letters...");
+      const res = await fetch("/api/campaigns/quick-send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetRole, tone }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to start quick outreach.");
+
+      toast.success(data.message);
+      window.location.href = "/campaigns";
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setQuickSending(false);
     }
   };
 
@@ -229,10 +259,20 @@ export default function DraftsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleQuickSendAll}
+            disabled={quickSending}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-50"
+            title="Generates personalized applications for all valid contacts, approves them, and starts sending immediately"
+          >
+            <Send className="h-4 w-4" />
+            {quickSending ? "Tailoring & Sending..." : "⚡ 1-Click: Tailor & Send All"}
+          </button>
+
           {approvedCount > 0 && (
             <Link
               href="/campaigns"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition"
             >
               <Send className="h-4 w-4" />
               Send {approvedCount} Approved {approvedCount === 1 ? "Email" : "Emails"}
@@ -282,18 +322,28 @@ export default function DraftsPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t">
           <span className="text-xs text-slate-500">
-            Clicking Generate will synthesize tailored applications for all valid contacts in your database.
+            Clicking Generate will synthesize tailored applications. Use 1-Click to generate and dispatch simultaneously.
           </span>
-          <button
-            onClick={handleGenerateAll}
-            disabled={generating}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition disabled:opacity-50"
-          >
-            <Sparkles className="h-4 w-4" />
-            {generating ? "Generating AI Drafts..." : "Generate Applications for All Valid Contacts"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleGenerateAll}
+              disabled={generating || quickSending}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition disabled:opacity-50"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {generating ? "Generating..." : "Generate Drafts Only"}
+            </button>
+            <button
+              onClick={handleQuickSendAll}
+              disabled={generating || quickSending}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition disabled:opacity-50"
+            >
+              <Send className="h-3.5 w-3.5" />
+              {quickSending ? "Tailoring & Sending..." : "⚡ 1-Click: Tailor & Send All"}
+            </button>
+          </div>
         </div>
       </div>
 

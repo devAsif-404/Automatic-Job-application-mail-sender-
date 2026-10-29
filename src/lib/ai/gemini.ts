@@ -3,7 +3,7 @@ import { GeneratedEmailDraft, GeneratedEmailDraftSchema } from "../utils/validat
 import { buildApplicationDraftPrompt, DraftPromptInput } from "./prompts";
 import { redactSensitive } from "../utils/sanitize";
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 
 /**
  * Exponential backoff helper for handling Gemini rate limits (429) or transient network issues.
@@ -107,25 +107,40 @@ export async function generateApplicationDraft(
   const modelName = process.env.GEMINI_MODEL || DEFAULT_MODEL;
 
   const runGeneration = async (): Promise<GeneratedEmailDraft> => {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction,
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    const payload = {
+      systemInstruction: {
+        parts: [{ text: systemInstruction }],
+      },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.3,
         maxOutputTokens: 2048,
       },
-    });
+    };
 
-    // 30 second timeout promise
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Gemini API request timed out after 30 seconds.")), 30000)
-    );
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
 
-    const apiPromise = model.generateContent(userPrompt);
-    const result = await Promise.race([apiPromise, timeoutPromise]);
-    const responseText = result.response.text();
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const data = await res.json();
+    if (data.error) {
+      throw new Error(`Gemini API Error: ${data.error.message}`);
+    }
+
+    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!responseText) {
       throw new Error("Empty response received from Gemini API.");
@@ -156,7 +171,7 @@ export async function generateApplicationDraft(
   };
 
   try {
-    return await retryWithBackoff(runGeneration, 3, 2000);
+    return await retryWithBackoff(runGeneration, 2, 1000);
   } catch (err: any) {
     const safeError = redactSensitive(err?.message || String(err));
     console.error("[Gemini API Error]", safeError);
