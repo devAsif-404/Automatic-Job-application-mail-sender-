@@ -110,3 +110,4 @@ Engineered an end-to-end data processing pipeline using Kafka and Next.js.
     expect(profile.projects.length).toBeGreaterThan(0);
   });
 });
+

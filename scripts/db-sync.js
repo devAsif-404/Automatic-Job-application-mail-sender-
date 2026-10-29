@@ -28,3 +28,4 @@ try {
   console.error(`[DB-Sync] Database synchronization failed:`, err.message);
   process.exit(1);
 }
+

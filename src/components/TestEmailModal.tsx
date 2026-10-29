@@ -130,3 +130,4 @@ export function TestEmailModal({ isOpen, onClose, currentSmtpConfig }: TestEmail
     </div>
   );
 }
+

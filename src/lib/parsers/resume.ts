@@ -170,3 +170,4 @@ export function extractStructuredInfoHeuristic(rawText: string): ResumeStructure
     tools: uniqueSkills.filter((s) => /git|docker|linux|aws|azure|jira|figma|vs code/i.test(s)),
   });
 }
+

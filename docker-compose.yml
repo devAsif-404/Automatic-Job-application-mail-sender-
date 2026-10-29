@@ -59,3 +59,4 @@ volumes:
   pgdata:
   redisdata:
   app-uploads:
+

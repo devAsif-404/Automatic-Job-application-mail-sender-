@@ -35,3 +35,4 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+

@@ -164,3 +164,4 @@ export async function generateApplicationDraft(
     return generateDeterministicFallbackDraft(input);
   }
 }
+

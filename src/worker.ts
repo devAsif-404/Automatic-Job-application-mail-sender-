@@ -48,3 +48,4 @@ process.on("SIGINT", async () => {
   if (bullWorker) await bullWorker.close();
   process.exit(0);
 });
+

@@ -201,3 +201,4 @@ model AuditEvent {
   @@index([userId])
   @@index([action])
 }
+

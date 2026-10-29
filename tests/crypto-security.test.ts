@@ -43,3 +43,4 @@ describe("Cryptography & Secret Security", () => {
     expect(redacted).toContain("[REDACTED_GEMINI_KEY]");
   });
 });
+

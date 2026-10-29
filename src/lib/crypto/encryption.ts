@@ -72,3 +72,4 @@ export function maskSecret(secret: string | null | undefined): string {
   if (!secret) return "";
   return "••••••••";
 }
+

@@ -90,3 +90,4 @@ export function startWorker(): Worker | null {
 
   return worker;
 }
+

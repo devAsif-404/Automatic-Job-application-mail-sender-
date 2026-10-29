@@ -77,3 +77,4 @@ REQUIRED JSON SCHEMA:
 
   return { systemInstruction, userPrompt };
 }
+
