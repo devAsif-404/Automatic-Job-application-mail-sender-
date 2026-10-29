@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String?
+  passwordHash String?
+  role         String        @default("user")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  resumes      Resume[]
+  contactLists ContactList[]
+  campaigns    Campaign[]
+  auditEvents  AuditEvent[]
+}
+
+model Resume {
+  id             String             @id @default(cuid())
+  userId         String?
+  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName       String
+  originalName   String
+  mimeType       String
+  fileSize       Int
+  filePath       String
+  fileHash       String?
+  parsedRawText  String
+  structuredData String             // JSON string for SQLite compatibility
+  isCurrent      Boolean            @default(true)
+  version        Int                @default(1)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  drafts         ApplicationDraft[]
+
+  @@index([userId])
+  @@index([isCurrent])
+}
+
+model ContactList {
+  id             String    @id @default(cuid())
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName       String
+  fileType       String
+  totalRows      Int       @default(0)
+  validCount     Int       @default(0)
+  invalidCount   Int       @default(0)
+  duplicateCount Int       @default(0)
+  columnMapping  String?   // JSON string
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  contacts       Contact[]
+
+  @@index([userId])
+}
+
+model Contact {
+  id               String             @id @default(cuid())
+  contactListId    String
+  contactList      ContactList        @relation(fields: [contactListId], references: [id], onDelete: Cascade)
+  rowNumber        Int
+  name             String
+  email            String
+  normalizedEmail  String
+  company          String
+  role             String?
+  jobDescription   String?
+  jobUrl           String?
+  isValid          Boolean            @default(true)
+  validationErrors String?
+  isExcluded       Boolean            @default(false)
+  isDuplicate      Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  drafts           ApplicationDraft[]
+  sendingJobs      SendingJob[]
+
+  @@index([contactListId])
+  @@index([normalizedEmail])
+}
+
+model ApplicationDraft {
+  id              String       @id @default(cuid())
+  contactId       String
+  contact         Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  resumeId        String
+  resume          Resume       @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  targetRole      String?
+  subject         String
+  greeting        String
+  emailBody       String
+  coverLetter     String
+  validationNotes String?
+  aiModelUsed     String?
+  status          String       @default("DRAFT") // DRAFT, APPROVED, EXCLUDED, SENT
+  isApproved      Boolean      @default(false)
+  version         Int          @default(1)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  sendingJobs     SendingJob[]
+
+  @@index([contactId])
+  @@index([resumeId])
+  @@index([status])
+}
+
+model Campaign {
+  id           String       @id @default(cuid())
+  userId       String?
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  status       String       @default("PENDING") // PENDING, RUNNING, PAUSED, COMPLETED, CANCELLED, FAILED
+  totalCount   Int          @default(0)
+  pendingCount Int          @default(0)
+  sentCount    Int          @default(0)
+  failedCount  Int          @default(0)
+  skippedCount Int          @default(0)
+  delayMs      Int          @default(3000)
+  concurrency  Int          @default(2)
+  createdAt    DateTime     @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+
+  jobs         SendingJob[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model SendingJob {
+  id             String             @id @default(cuid())
+  campaignId     String
+  campaign       Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId      String
+  contact        Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  draftId        String
+  draft          ApplicationDraft   @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  status         String             @default("PENDING") // PENDING, QUEUED, PROCESSING, SENT, FAILED, SKIPPED, CANCELLED
+  attempts       Int                @default(0)
+  maxAttempts    Int                @default(3)
+  lastError      String?
+  smtpMessageId  String?
+  acceptedAt     DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  attemptsList   SmtpAttempt[]
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([contactId])
+}
+
+model SmtpAttempt {
+  id           String      @id @default(cuid())
+  sendingJobId String
+  sendingJob   SendingJob  @relation(fields: [sendingJobId], references: [id], onDelete: Cascade)
+  attemptNumber Int
+  status       String      // SUCCESS, FAILED
+  response     String?
+  errorMessage String?
+  durationMs   Int?
+  createdAt    DateTime    @default(now())
+
+  @@index([sendingJobId])
+}
+
+model AppSetting {
+  id             String   @id @default(cuid())
+  key            String   @unique
+  encryptedValue String
+  iv             String?
+  authTag        String?
+  isSecret       Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  entityType String?
+  entityId   String?
+  details    String?  // JSON string
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+}
